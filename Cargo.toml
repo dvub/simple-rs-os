@@ -11,5 +11,9 @@ panic = "abort" # disable stack unwinding on panic
 [profile.release]
 panic = "abort" # disable stack unwinding on panic
 
+# these dependencies are pretty old versions
+# i haven't tried to modify the tutorial code 
+# to work with the new versions
 [dependencies]
 bootloader = "0.9"
+volatile = "0.2.6"
