@@ -5,15 +5,17 @@
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
-use simple_rs_os::println;
-
+use simple_rs_os::{init, println};
 #[no_mangle]
+#[allow(clippy::empty_loop)]
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
+    // load idt
+    init();
 
+    // this will only be executed when testing
     #[cfg(test)]
     test_main();
-
     loop {}
 }
 

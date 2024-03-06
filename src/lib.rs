@@ -3,11 +3,16 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
-
+#![feature(abi_x86_interrupt)]
 use core::panic::PanicInfo;
 
+pub mod interrupts;
 pub mod serial;
 pub mod vga_buffer;
+
+pub fn init() {
+    interrupts::init_idt();
+}
 
 pub trait Testable {
     fn run(&self);
@@ -19,6 +24,7 @@ impl<T: Fn()> Testable for T {
         serial_println!("[ok]");
     }
 }
+#[allow(clippy::empty_loop)]
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
@@ -36,6 +42,7 @@ pub fn test_runner(tests: &[&dyn Testable]) {
 
 #[cfg(test)]
 #[no_mangle]
+#[allow(clippy::empty_loop)]
 pub extern "C" fn _start() -> ! {
     test_main();
     loop {}
