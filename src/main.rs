@@ -18,7 +18,9 @@ pub extern "C" fn _start() -> ! {
     // this will only be executed when testing
     #[cfg(test)]
     test_main();
-    loop {}
+    loop {
+        simple_rs_os::print!("-"); // EHHHHHH>???
+    }
 }
 
 // This function is called on panic.
