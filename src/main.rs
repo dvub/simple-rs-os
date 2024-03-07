@@ -4,7 +4,7 @@
 #![test_runner(simple_rs_os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 use core::panic::PanicInfo;
-use simple_rs_os::{init, println};
+use simple_rs_os::{hlt_loop, init, println};
 
 // entry point of the OS
 #[no_mangle]
@@ -18,9 +18,7 @@ pub extern "C" fn _start() -> ! {
     // this will only be executed when testing
     #[cfg(test)]
     test_main();
-    loop {
-        simple_rs_os::print!("-"); // EHHHHHH>???
-    }
+    hlt_loop();
 }
 
 // This function is called on panic.
@@ -28,7 +26,7 @@ pub extern "C" fn _start() -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    hlt_loop();
 }
 // This function is called on panic.
 #[cfg(test)]

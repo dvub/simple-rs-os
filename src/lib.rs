@@ -40,7 +40,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     // when we want to indicate that a test fails (because it panics and thus calls this function),
     // we can signal that by exiting QEMU with a failure code
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
 // accepts a `slice`(?) of functions that implement Testable to run and test! pretty simple
@@ -60,7 +60,12 @@ pub fn test_runner(tests: &[&dyn Testable]) {
 #[allow(clippy::empty_loop)]
 pub extern "C" fn _start() -> ! {
     test_main();
-    loop {}
+    hlt_loop();
+}
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt();
+    }
 }
 // wrapper ?
 // honestly forgot why we need this
