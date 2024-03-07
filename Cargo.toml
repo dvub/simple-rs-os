@@ -3,6 +3,10 @@ name = "simple-rs-os"
 version = "0.1.0"
 edition = "2021"
 
+[[test]]
+name = "stack_overflow"
+harness = false
+
 # the profile used for `cargo build`
 #[profile.dev]
 #panic = "abort" # disable stack unwinding on panic

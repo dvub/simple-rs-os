@@ -4,6 +4,20 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 use volatile::Volatile;
 
+// the magnificent type-safe wrapper struct for interacting with our VGA buffer
+pub struct Writer {
+    column_position: usize,
+    color_code: ColorCode,
+    buffer: &'static mut Buffer,
+}
+
+#[repr(transparent)]
+struct Buffer {
+    // the trick here is `Volatile` which makes absolutely sure that nothing breaks (???)
+    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
+}
+
+// creating a static so that we can have an instance of our writer. also note the spinlock (Mutex)
 lazy_static! {
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
@@ -12,6 +26,7 @@ lazy_static! {
     });
 }
 
+// the dimensions of the typical vga buffer
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
@@ -37,6 +52,7 @@ pub enum Color {
     White = 15,
 }
 
+// (???)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
 struct ColorCode(u8);
@@ -45,7 +61,7 @@ impl ColorCode {
         ColorCode((background as u8) << 4 | (foreground as u8))
     }
 }
-
+// this is pretty self-explanatory
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 struct ScreenChar {
@@ -53,30 +69,20 @@ struct ScreenChar {
     color_code: ColorCode,
 }
 
-#[repr(transparent)]
-struct Buffer {
-    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
-}
-
-pub struct Writer {
-    column_position: usize,
-    color_code: ColorCode,
-    buffer: &'static mut Buffer,
-}
 impl Writer {
+    // writes a single byte
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             // if the new line character, insert a new line
             b'\n' => self.new_line(),
             // if it's an actual byte that we can print, lets do it
             byte => {
+                // if the buffer is filled up length-wise, we need a new line!
                 if self.column_position >= BUFFER_WIDTH {
                     self.new_line();
                 }
-
                 let row = BUFFER_HEIGHT - 1;
                 let col = self.column_position;
-
                 let color_code = self.color_code;
                 self.buffer.chars[row][col].write(ScreenChar {
                     ascii_character: byte,
@@ -86,6 +92,7 @@ impl Writer {
             }
         }
     }
+    // shift
     fn new_line(&mut self) {
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
@@ -97,10 +104,12 @@ impl Writer {
         self.column_position = 0;
     }
     fn clear_row(&mut self, row: usize) {
+        // init a blank char
         let blank = ScreenChar {
             ascii_character: b' ',
             color_code: self.color_code,
         };
+        // iterate over the row and fill each cell with that blank char
         for col in 0..BUFFER_WIDTH {
             self.buffer.chars[row][col].write(blank);
         }
@@ -125,6 +134,8 @@ impl fmt::Write for Writer {
         Ok(())
     }
 }
+// more bullshit macro magic that i don't understand
+// (????????????///)
 
 /// Like the `print!` macro in the standard library, but prints to the VGA text buffer.
 #[macro_export]
